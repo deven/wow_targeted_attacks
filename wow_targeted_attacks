@@ -1,0 +1,57 @@
+#!/usr/bin/perl
+
+our $original_health;
+our $target_low;
+our $target_high;
+
+our %pet_ability;
+
+sub solve ($$@);
+
+sub solve ($$@) {
+   my ($health, $solution, @attacks) = @_;
+
+   if ($health >= $target_low and $health <= $target_high) {
+      my %count;
+      foreach my $attack (@{$solution}) {
+         $count{$attack}++;
+      }
+      my @solution = sort { $b <=> $a; } keys %count;
+      printf "\n* %d - %s = %d\n", $original_health, join(" - ", map { sprintf "%d * %d (%s)", $count{$_}, $_, join " or ", @{$pet_ability{$_}}; } @solution), $health;
+   }
+
+   return if $health <= $target_high or not @attacks;
+
+   my $attack = shift @attacks;
+   my @solution = @{$solution};
+
+   while ($health >= $target_low) {
+      solve $health, \@solution, @attacks;
+      push @solution, $attack;
+      $health -= $attack;
+   }
+}
+
+$| = 1;
+
+print "Original health: ";
+$original_health = int(<STDIN>);
+print "Target health (low): ";
+$target_low = int(<STDIN>);
+print "Target health (high): ";
+$target_high = int(<STDIN>);
+
+die "Invalid values!\n" if $target_low < 0 or $target_high < $target_low or $original_health < $target_high;
+
+while (1) {
+   print "\nAttack: ";
+   $attack = int(<STDIN>);
+   last unless $attack > 0;
+   print "Pet: ";
+   chomp($pet = <STDIN>);
+   print "Ability: ";
+   chomp($ability = <STDIN>);
+   push @{$pet_ability{$attack}}, "$pet/$ability";
+   my @attacks = sort { $a <=> $b; } keys %pet_ability;
+   solve $original_health, [], @attacks;
+}
